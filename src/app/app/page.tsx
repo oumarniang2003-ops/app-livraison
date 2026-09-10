@@ -18,11 +18,11 @@ type Row = {
 export default async function ClientDashboard() {
   const session = await getSession();
   const result = await query<Row>(
-    `select id, statut, adresse_depart, adresse_arrivee, destinataire_nom, prix_fcfa, created_at, livreur_nom
+    `select l.id, l.statut, l.adresse_depart, l.adresse_arrivee, l.destinataire_nom, l.prix_fcfa, l.created_at, lv.nom as livreur_nom
      from livraisons l
      left join users lv on lv.id = l.livreur_id
-     where client_id = $1
-     order by created_at desc`,
+     where l.client_id = $1
+     order by l.created_at desc`,
     [session!.userId]
   );
 
