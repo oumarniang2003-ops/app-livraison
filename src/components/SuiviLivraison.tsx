@@ -3,12 +3,17 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { STATUT_LABEL, STATUT_COLOR } from "@/lib/statut";
+import MapSuivi from "@/components/MapSuivi";
 
 export type Livraison = {
   id: string;
   statut: string;
   adresse_depart: string;
   adresse_arrivee: string;
+  depart_lat: number | null;
+  depart_lng: number | null;
+  arrivee_lat: number | null;
+  arrivee_lng: number | null;
   destinataire_nom: string;
   destinataire_telephone: string;
   prix_fcfa: number | null;
@@ -103,20 +108,29 @@ export default function SuiviLivraison({
         </div>
       )}
 
-      {position && (
+      {(position || livraison.depart_lat || livraison.arrivee_lat) && (
         <div className="bg-white rounded-2xl border border-neutral-100 p-5">
-          <h3 className="font-semibold text-sm mb-1">Position actuelle du livreur</h3>
-          <p className="text-xs text-neutral-500 mb-2">
-            Mise à jour il y a {Math.max(0, Math.round((maintenant - new Date(position.updated_at).getTime()) / 1000))}s
-          </p>
-          <a
-            href={`https://www.google.com/maps?q=${position.lat},${position.lng}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-orange-600 font-medium"
-          >
-            Voir sur la carte →
-          </a>
+          <h3 className="font-semibold text-sm mb-3">Position actuelle du livreur</h3>
+          <MapSuivi
+            depart={livraison.depart_lat && livraison.depart_lng ? { lat: livraison.depart_lat, lng: livraison.depart_lng } : null}
+            arrivee={livraison.arrivee_lat && livraison.arrivee_lng ? { lat: livraison.arrivee_lat, lng: livraison.arrivee_lng } : null}
+            position={position ? { lat: position.lat, lng: position.lng } : null}
+          />
+          {position && (
+            <>
+              <p className="text-xs text-neutral-500 mt-3 mb-1">
+                Mise à jour il y a {Math.max(0, Math.round((maintenant - new Date(position.updated_at).getTime()) / 1000))}s
+              </p>
+              <a
+                href={`https://www.google.com/maps?q=${position.lat},${position.lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-orange-600 font-medium"
+              >
+                Ouvrir dans Google Maps →
+              </a>
+            </>
+          )}
         </div>
       )}
 

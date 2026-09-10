@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { query } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { geocode } from "@/lib/geocode";
 
 const createSchema = z.object({
   adresse_depart: z.string().min(3),
@@ -30,6 +31,11 @@ export async function POST(req: Request) {
   }
   const d = parsed.data;
 
+  const [departGeo, arriveeGeo] = await Promise.all([
+    d.depart_lat && d.depart_lng ? null : geocode(d.adresse_depart),
+    d.arrivee_lat && d.arrivee_lng ? null : geocode(d.adresse_arrivee),
+  ]);
+
   const result = await query<{ id: string }>(
     `insert into livraisons
       (client_id, adresse_depart, depart_lat, depart_lng, adresse_arrivee, arrivee_lat, arrivee_lng,
@@ -39,11 +45,11 @@ export async function POST(req: Request) {
     [
       session.userId,
       d.adresse_depart,
-      d.depart_lat ?? null,
-      d.depart_lng ?? null,
+      d.depart_lat ?? departGeo?.lat ?? null,
+      d.depart_lng ?? departGeo?.lng ?? null,
       d.adresse_arrivee,
-      d.arrivee_lat ?? null,
-      d.arrivee_lng ?? null,
+      d.arrivee_lat ?? arriveeGeo?.lat ?? null,
+      d.arrivee_lng ?? arriveeGeo?.lng ?? null,
       d.description ?? null,
       d.destinataire_nom,
       d.destinataire_telephone,
