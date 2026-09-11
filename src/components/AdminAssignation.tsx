@@ -8,13 +8,15 @@ type Livreur = { id: string; nom: string; zone: string | null };
 export default function AdminAssignation({
   livraisonId,
   livreurs,
+  prixSuggere,
 }: {
   livraisonId: string;
   livreurs: Livreur[];
+  prixSuggere: number | null;
 }) {
   const router = useRouter();
   const [livreurId, setLivreurId] = useState(livreurs[0]?.id ?? "");
-  const [prix, setPrix] = useState("");
+  const [prix, setPrix] = useState(prixSuggere ? String(prixSuggere) : "");
   const [loading, setLoading] = useState(false);
 
   async function assigner() {
@@ -61,6 +63,9 @@ export default function AdminAssignation({
         onChange={(e) => setPrix(e.target.value)}
         className="border border-neutral-300 rounded-lg px-2 py-1.5 text-sm w-28"
       />
+      {prixSuggere && (
+        <span className="text-xs text-neutral-400">Suggéré : {prixSuggere} FCFA</span>
+      )}
       <button
         onClick={assigner}
         disabled={loading}

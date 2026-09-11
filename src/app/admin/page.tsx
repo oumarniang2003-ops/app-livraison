@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { query } from "@/lib/db";
 import { STATUT_LABEL, STATUT_COLOR } from "@/lib/statut";
+import { prixSuggere } from "@/lib/prix";
 import NavBar from "@/components/NavBar";
 import AdminAssignation from "@/components/AdminAssignation";
 
@@ -11,6 +12,10 @@ type Row = {
   statut: string;
   adresse_depart: string;
   adresse_arrivee: string;
+  depart_lat: number | null;
+  depart_lng: number | null;
+  arrivee_lat: number | null;
+  arrivee_lng: number | null;
   destinataire_nom: string;
   prix_fcfa: number | null;
   client_nom: string;
@@ -65,7 +70,14 @@ export default async function AdminDashboard() {
                 <p className="text-xs text-neutral-400 mb-3">
                   Client : {r.client_nom} ({r.client_telephone}) · Pour {r.destinataire_nom}
                 </p>
-                <AdminAssignation livraisonId={r.id} livreurs={livreurs.rows} />
+                <AdminAssignation
+                  livraisonId={r.id}
+                  livreurs={livreurs.rows}
+                  prixSuggere={prixSuggere(
+                    r.depart_lat && r.depart_lng ? { lat: r.depart_lat, lng: r.depart_lng } : null,
+                    r.arrivee_lat && r.arrivee_lng ? { lat: r.arrivee_lat, lng: r.arrivee_lng } : null
+                  )}
+                />
               </div>
             ))}
           </div>
