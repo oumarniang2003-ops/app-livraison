@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { STATUT_LABEL, STATUT_COLOR } from "@/lib/statut";
-import MapSuivi from "@/components/MapSuivi";
+
+const MapSuivi = dynamic(() => import("@/components/MapSuivi"), { ssr: false });
 
 export type Livraison = {
   id: string;
