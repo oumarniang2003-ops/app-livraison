@@ -1,12 +1,23 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import mapboxgl from "mapbox-gl";
-import "mapbox-gl/dist/mapbox-gl.css";
-
-const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 type Point = { lat: number; lng: number };
+
+function icone(couleur: string, taille: number) {
+  return L.divIcon({
+    className: "",
+    html: `<div style="width:${taille}px;height:${taille}px;border-radius:50%;background:${couleur};border:2px solid white;box-shadow:0 0 0 1px rgba(0,0,0,0.15);"></div>`,
+    iconSize: [taille, taille],
+    iconAnchor: [taille / 2, taille / 2],
+  });
+}
+
+const ICONE_DEPART = icone("#a3a3a3", 14);
+const ICONE_ARRIVEE = icone("#171717", 14);
+const ICONE_LIVREUR = icone("#f97316", 18);
 
 export default function MapSuivi({
   depart,
@@ -18,18 +29,17 @@ export default function MapSuivi({
   position: Point | null;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
-  const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const mapRef = useRef<L.Map | null>(null);
+  const markersRef = useRef<L.Marker[]>([]);
 
   useEffect(() => {
-    if (!TOKEN || !containerRef.current || mapRef.current) return;
-    mapboxgl.accessToken = TOKEN;
-    mapRef.current = new mapboxgl.Map({
-      container: containerRef.current,
-      style: "mapbox://styles/mapbox/streets-v12",
-      center: [-17.4677, 14.7167],
-      zoom: 12,
-    });
+    if (!containerRef.current || mapRef.current) return;
+    mapRef.current = L.map(containerRef.current, { attributionControl: false }).setView([14.7167, -17.4677], 12);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap contributors",
+      maxZoom: 19,
+    }).addTo(mapRef.current);
+    L.control.attribution({ prefix: false }).addTo(mapRef.current);
     return () => {
       mapRef.current?.remove();
       mapRef.current = null;
@@ -38,42 +48,32 @@ export default function MapSuivi({
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !TOKEN) return;
+    if (!map) return;
 
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
 
-    const bounds = new mapboxgl.LngLatBounds();
-    let hasPoint = false;
+    const points: L.LatLngExpression[] = [];
 
     if (depart) {
-      const el = document.createElement("div");
-      el.style.cssText = "width:14px;height:14px;border-radius:50%;background:#a3a3a3;border:2px solid white;";
-      markersRef.current.push(new mapboxgl.Marker({ element: el }).setLngLat([depart.lng, depart.lat]).addTo(map));
-      bounds.extend([depart.lng, depart.lat]);
-      hasPoint = true;
+      markersRef.current.push(L.marker([depart.lat, depart.lng], { icon: ICONE_DEPART }).addTo(map));
+      points.push([depart.lat, depart.lng]);
     }
     if (arrivee) {
-      const el = document.createElement("div");
-      el.style.cssText = "width:14px;height:14px;border-radius:50%;background:#171717;border:2px solid white;";
-      markersRef.current.push(new mapboxgl.Marker({ element: el }).setLngLat([arrivee.lng, arrivee.lat]).addTo(map));
-      bounds.extend([arrivee.lng, arrivee.lat]);
-      hasPoint = true;
+      markersRef.current.push(L.marker([arrivee.lat, arrivee.lng], { icon: ICONE_ARRIVEE }).addTo(map));
+      points.push([arrivee.lat, arrivee.lng]);
     }
     if (position) {
-      const el = document.createElement("div");
-      el.style.cssText = "width:18px;height:18px;border-radius:50%;background:#f97316;border:3px solid white;box-shadow:0 0 0 2px #f97316;";
-      markersRef.current.push(new mapboxgl.Marker({ element: el }).setLngLat([position.lng, position.lat]).addTo(map));
-      bounds.extend([position.lng, position.lat]);
-      hasPoint = true;
+      markersRef.current.push(L.marker([position.lat, position.lng], { icon: ICONE_LIVREUR }).addTo(map));
+      points.push([position.lat, position.lng]);
     }
 
-    if (hasPoint) {
-      map.fitBounds(bounds, { padding: 60, maxZoom: 15, duration: 500 });
+    if (points.length === 1) {
+      map.setView(points[0], 14);
+    } else if (points.length > 1) {
+      map.fitBounds(L.latLngBounds(points), { padding: [40, 40], maxZoom: 15 });
     }
   }, [depart, arrivee, position]);
-
-  if (!TOKEN) return null;
 
   return <div ref={containerRef} className="w-full h-64 rounded-2xl overflow-hidden border border-neutral-100" />;
 }

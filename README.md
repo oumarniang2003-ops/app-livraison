@@ -26,11 +26,12 @@ MVP : client crée une demande de livraison, l'admin assigne un livreur de la pe
 - Partage de position GPS du livreur pendant la course (geolocation navigateur)
 - Suivi temps réel côté client (rafraîchissement automatique toutes les 5s)
 - Historique des statuts par livraison
+- Carte de suivi en direct (Leaflet + OpenStreetMap, gratuit, sans compte ni carte bancaire) : position du livreur, départ, arrivée
+- Géocodage automatique des adresses saisies (via Nominatim/OpenStreetMap) pour les placer sur la carte
 
 ## Pas encore fait (prochaines étapes)
 
 - Paiement Wave / Orange Money intégré (pour l'instant : cash ou paiement manuel hors app)
-- Carte visuelle (actuellement : lien vers Google Maps avec les coordonnées du livreur)
 - Calcul automatique du prix selon la distance
 - Notifications (SMS/push) au client et au livreur
 - Système d'adressage/repères propre à Dakar
