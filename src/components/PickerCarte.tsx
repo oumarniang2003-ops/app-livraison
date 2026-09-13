@@ -39,7 +39,7 @@ export default function PickerCarte({
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
-    const map = L.map(containerRef.current, { attributionControl: false }).setView([14.7167, -17.4677], 12);
+    const map = L.map(containerRef.current, { attributionControl: false, scrollWheelZoom: false }).setView([14.7167, -17.4677], 12);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "© OpenStreetMap contributors",
       maxZoom: 19,

@@ -34,7 +34,7 @@ export default function MapSuivi({
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
-    mapRef.current = L.map(containerRef.current, { attributionControl: false }).setView([14.7167, -17.4677], 12);
+    mapRef.current = L.map(containerRef.current, { attributionControl: false, scrollWheelZoom: false }).setView([14.7167, -17.4677], 12);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "© OpenStreetMap contributors",
       maxZoom: 19,
