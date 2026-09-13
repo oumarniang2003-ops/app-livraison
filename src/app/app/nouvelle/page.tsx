@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import NavBar from "@/components/NavBar";
+
+const PickerCarte = dynamic(() => import("@/components/PickerCarte"), { ssr: false });
+
+type Point = { lat: number; lng: number };
 
 export default function NouvelleLivraisonPage() {
   const router = useRouter();
@@ -15,6 +20,8 @@ export default function NouvelleLivraisonPage() {
     mode_paiement: "cash",
     notes: "",
   });
+  const [pointDepart, setPointDepart] = useState<Point | null>(null);
+  const [pointArrivee, setPointArrivee] = useState<Point | null>(null);
   const [erreur, setErreur] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -22,15 +29,25 @@ export default function NouvelleLivraisonPage() {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
+  function onPointChange(champ: "depart" | "arrivee", point: Point) {
+    if (champ === "depart") setPointDepart(point);
+    else setPointArrivee(point);
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErreur("");
     setLoading(true);
     try {
+      const body = {
+        ...form,
+        ...(pointDepart ? { depart_lat: pointDepart.lat, depart_lng: pointDepart.lng } : {}),
+        ...(pointArrivee ? { arrivee_lat: pointArrivee.lat, arrivee_lng: pointArrivee.lng } : {}),
+      };
       const res = await fetch("/api/livraisons", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -71,6 +88,13 @@ export default function NouvelleLivraisonPage() {
               placeholder="Ex : Almadies, Cité Djily Mbaye, villa 12"
               className="w-full border border-neutral-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Pointer les emplacements sur la carte <span className="text-neutral-400 font-normal">(recommandé)</span>
+            </label>
+            <PickerCarte depart={pointDepart} arrivee={pointArrivee} onChange={onPointChange} />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
