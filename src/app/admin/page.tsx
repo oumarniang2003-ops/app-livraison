@@ -49,9 +49,14 @@ export default async function AdminDashboard() {
       <main className="max-w-4xl mx-auto w-full px-6 py-8 flex-1">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-bold">Tableau de bord</h1>
-          <Link href="/admin/livreurs" className="text-sm text-orange-600 font-medium">
-            Gérer les livreurs →
-          </Link>
+          <div className="flex gap-4">
+            <Link href="/admin/historique" className="text-sm text-orange-600 font-medium">
+              Historique →
+            </Link>
+            <Link href="/admin/livreurs" className="text-sm text-orange-600 font-medium">
+              Gérer les livreurs →
+            </Link>
+          </div>
         </div>
 
         <section className="mb-10">
