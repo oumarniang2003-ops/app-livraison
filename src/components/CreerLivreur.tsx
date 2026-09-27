@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { IconBike, IconPlus, IconArrowRight } from "@/components/Icons";
 
 export default function CreerLivreur() {
   const router = useRouter();
@@ -24,7 +25,7 @@ export default function CreerLivreur() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setErreur(data.error ?? "Erreur");
+        setErreur(data.error ?? "Erreur lors de la création");
         return;
       }
       setNom("");
@@ -38,46 +39,74 @@ export default function CreerLivreur() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="bg-white rounded-2xl border border-neutral-100 p-5 grid gap-3">
-      <div className="grid grid-cols-2 gap-3">
-        <input
-          required
-          placeholder="Nom complet"
-          value={nom}
-          onChange={(e) => setNom(e.target.value)}
-          className="border border-neutral-300 rounded-lg px-3 py-2 text-sm"
-        />
-        <input
-          required
-          type="tel"
-          placeholder="Téléphone"
-          value={telephone}
-          onChange={(e) => setTelephone(e.target.value)}
-          className="border border-neutral-300 rounded-lg px-3 py-2 text-sm"
-        />
-        <input
-          required
-          type="password"
-          placeholder="Mot de passe"
-          minLength={6}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="border border-neutral-300 rounded-lg px-3 py-2 text-sm"
-        />
-        <input
-          placeholder="Zone (facultatif)"
-          value={zone}
-          onChange={(e) => setZone(e.target.value)}
-          className="border border-neutral-300 rounded-lg px-3 py-2 text-sm"
-        />
+    <form onSubmit={onSubmit} className="bg-white rounded-3xl border border-neutral-200/80 p-5 sm:p-6 shadow-xs space-y-4">
+      <div className="grid sm:grid-cols-2 gap-3.5">
+        <div>
+          <label className="block text-xs font-semibold text-neutral-600 mb-1">Nom du coursier</label>
+          <input
+            required
+            placeholder="Ex: Modou Fall"
+            value={nom}
+            onChange={(e) => setNom(e.target.value)}
+            className="w-full bg-neutral-50 focus:bg-white border border-neutral-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-neutral-600 mb-1">Téléphone (Sénégal)</label>
+          <input
+            required
+            type="tel"
+            placeholder="77 123 45 67"
+            value={telephone}
+            onChange={(e) => setTelephone(e.target.value)}
+            className="w-full bg-neutral-50 focus:bg-white border border-neutral-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-neutral-600 mb-1">Mot de passe temporaire</label>
+          <input
+            required
+            type="password"
+            placeholder="••••••••"
+            minLength={6}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full bg-neutral-50 focus:bg-white border border-neutral-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-neutral-600 mb-1">Zone de prédilection (facultatif)</label>
+          <input
+            placeholder="Ex: Plateau / Almadies / Médina"
+            value={zone}
+            onChange={(e) => setZone(e.target.value)}
+            className="w-full bg-neutral-50 focus:bg-white border border-neutral-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+          />
+        </div>
       </div>
-      {erreur && <p className="text-sm text-red-600">{erreur}</p>}
+
+      {erreur && (
+        <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-600 font-medium">
+          {erreur}
+        </div>
+      )}
+
       <button
         type="submit"
         disabled={loading}
-        className="bg-orange-500 text-white rounded-lg py-2 text-sm font-medium hover:bg-orange-600 transition disabled:opacity-50"
+        className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-bold shadow-sm transition active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
       >
-        {loading ? "..." : "Ajouter ce livreur"}
+        {loading ? (
+          <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+        ) : (
+          <>
+            <IconPlus className="w-4 h-4" />
+            <span>Créer le compte coursier</span>
+          </>
+        )}
       </button>
     </form>
   );

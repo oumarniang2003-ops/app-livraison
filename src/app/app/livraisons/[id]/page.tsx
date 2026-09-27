@@ -20,9 +20,9 @@ export default async function SuiviPage({ params }: { params: Promise<{ id: stri
   if (!livraison) notFound();
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
       <NavBar titre="Suivi de livraison" home="/app" />
-      <main className="max-w-lg mx-auto w-full px-6 py-8 flex-1">
+      <main className="max-w-2xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 flex-1">
         <SuiviLivraison livraisonId={id} livraisonInitiale={livraison} role="client" />
       </main>
     </div>

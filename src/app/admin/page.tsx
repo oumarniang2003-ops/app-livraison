@@ -57,10 +57,16 @@ export default async function AdminDashboard() {
   ]);
 
   return (
-    <div className="flex-1 flex flex-col">
-      <NavBar titre="Admin" home="/admin" />
-      <main className="max-w-4xl mx-auto w-full px-6 py-8 flex-1">
-        <h1 className="text-2xl font-bold mb-8">Tableau de bord</h1>
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
+      <NavBar titre="Supervision & Dispatch" home="/admin" />
+      <main className="max-w-5xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 flex-1 space-y-6">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-black text-neutral-950 tracking-tight">Supervision des livraisons</h1>
+          <p className="text-xs sm:text-sm text-neutral-500 mt-0.5">
+            Centre de régulation des courses, assignations et suivi des livreurs à Dakar
+          </p>
+        </div>
+
         <AdminTabs
           enAttente={enAttente.rows}
           enCours={enCours.rows}
