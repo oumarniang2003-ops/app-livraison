@@ -8,10 +8,30 @@ type Livraison = {
   client_id: string;
   livreur_id: string | null;
   statut: string;
+  adresse_depart: string;
+  adresse_arrivee: string;
+  depart_lat: number | null;
+  depart_lng: number | null;
+  arrivee_lat: number | null;
+  arrivee_lng: number | null;
+  destinataire_nom: string;
+  destinataire_telephone: string;
+  prix_fcfa: number | null;
+  mode_paiement: string;
+  livreur_nom?: string | null;
+  livreur_telephone?: string | null;
+  livreur_plaque?: string | null;
+  livreur_modele?: string | null;
 };
 
 async function fetchLivraison(id: string) {
-  const result = await query<Livraison>("select * from livraisons where id = $1", [id]);
+  const result = await query<Livraison>(
+    `select l.*, lv.nom as livreur_nom, lv.telephone as livreur_telephone, lv.plaque_moto as livreur_plaque, lv.modele_moto as livreur_modele
+     from livraisons l
+     left join users lv on lv.id = l.livreur_id
+     where l.id = $1`,
+    [id]
+  );
   return result.rows[0] ?? null;
 }
 

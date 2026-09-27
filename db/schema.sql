@@ -12,6 +12,11 @@ create table if not exists users (
   password_hash text not null,
   zone text,
   actif boolean not null default true,
+  cni_numero text,
+  permis_numero text,
+  plaque_moto text,
+  modele_moto text,
+  statut_validation text not null default 'valide' check (statut_validation in ('en_attente', 'valide', 'rejete')),
   created_at timestamptz not null default now()
 );
 
@@ -54,6 +59,8 @@ create table if not exists livreur_position (
   updated_at timestamptz not null default now()
 );
 
+create index if not exists idx_users_role on users(role);
+create index if not exists idx_users_statut_validation on users(statut_validation);
 create index if not exists idx_livraisons_client on livraisons(client_id);
 create index if not exists idx_livraisons_livreur on livraisons(livreur_id);
 create index if not exists idx_livraisons_statut on livraisons(statut);

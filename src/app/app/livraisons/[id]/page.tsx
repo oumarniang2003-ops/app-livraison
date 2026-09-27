@@ -9,7 +9,7 @@ export default async function SuiviPage({ params }: { params: Promise<{ id: stri
   const session = await getSession();
 
   const result = await query<Livraison>(
-    `select l.*, lv.nom as livreur_nom, lv.telephone as livreur_telephone
+    `select l.*, lv.nom as livreur_nom, lv.telephone as livreur_telephone, lv.plaque_moto as livreur_plaque, lv.modele_moto as livreur_modele
      from livraisons l
      left join users lv on lv.id = l.livreur_id
      where l.id = $1 and l.client_id = $2`,

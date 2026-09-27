@@ -1,4 +1,5 @@
 import { query } from "@/lib/db";
+import { ensureSchema } from "@/lib/ensureSchema";
 import NavBar from "@/components/NavBar";
 import AdminTabs from "@/components/AdminTabs";
 
@@ -22,9 +23,23 @@ type Row = {
 
 type HistoriqueRow = Row & { updated_at: string };
 
-type Livreur = { id: string; nom: string; telephone: string; zone: string | null; actif: boolean };
+type Livreur = {
+  id: string;
+  nom: string;
+  telephone: string;
+  zone: string | null;
+  actif: boolean;
+  cni_numero: string | null;
+  permis_numero: string | null;
+  plaque_moto: string | null;
+  modele_moto: string | null;
+  statut_validation: string;
+  created_at: string;
+};
 
 export default async function AdminDashboard() {
+  await ensureSchema();
+
   const [enAttente, enCours, livreursActifs, livreursTous, historique] = await Promise.all([
     query<Row>(
       `select l.*, c.nom as client_nom, c.telephone as client_telephone
@@ -39,11 +54,11 @@ export default async function AdminDashboard() {
        where l.statut not in ('en_attente', 'livre', 'annule')
        order by l.created_at desc`
     ),
-    query<{ id: string; nom: string; zone: string | null }>(
-      "select id, nom, zone from users where role = 'livreur' and actif = true order by nom"
+    query<{ id: string; nom: string; zone: string | null; plaque_moto: string | null }>(
+      "select id, nom, zone, plaque_moto from users where role = 'livreur' and actif = true and statut_validation = 'valide' order by nom"
     ),
     query<Livreur>(
-      "select id, nom, telephone, zone, actif from users where role = 'livreur' order by created_at desc"
+      "select id, nom, telephone, zone, actif, cni_numero, permis_numero, plaque_moto, modele_moto, statut_validation, created_at from users where role = 'livreur' order by created_at desc"
     ),
     query<HistoriqueRow>(
       `select l.*, c.nom as client_nom, c.telephone as client_telephone, lv.nom as livreur_nom
@@ -63,7 +78,7 @@ export default async function AdminDashboard() {
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-neutral-950 tracking-tight">Supervision des livraisons</h1>
           <p className="text-xs sm:text-sm text-neutral-500 mt-0.5">
-            Centre de régulation des courses, assignations et suivi des livreurs à Dakar
+            Centre de régulation des courses, assignations et validation des livreurs certifiés
           </p>
         </div>
 

@@ -13,6 +13,7 @@ import {
   IconPackage,
   IconCheckCircle,
   IconClock,
+  IconShield,
 } from "@/components/Icons";
 
 const MapSuivi = dynamic(() => import("@/components/MapSuivi"), { ssr: false });
@@ -32,6 +33,8 @@ export type Livraison = {
   mode_paiement: string;
   livreur_nom: string | null;
   livreur_telephone: string | null;
+  livreur_plaque?: string | null;
+  livreur_modele?: string | null;
 };
 
 type Evenement = {
@@ -139,7 +142,7 @@ export default function SuiviLivraison({
           )}
         </div>
 
-        {/* Visual Progress Stepper (Mobile & Desktop) */}
+        {/* Visual Progress Stepper */}
         {livraison.statut !== "annule" && (
           <div className="my-6 pt-2">
             <div className="relative flex items-center justify-between">
@@ -228,19 +231,22 @@ export default function SuiviLivraison({
         </div>
       </div>
 
-      {/* Driver Card if Assigned */}
+      {/* Driver Card with Security / Plate verification */}
       {livraison.livreur_nom && (
-        <div className="bg-white rounded-3xl border border-neutral-200/80 p-5 sm:p-6 shadow-xs">
+        <div className="bg-white rounded-3xl border border-neutral-200/80 p-5 sm:p-6 shadow-xs space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-orange-500 to-amber-500 text-white flex items-center justify-center text-base font-bold shadow-md shadow-orange-500/20">
                 <IconBike className="w-6 h-6" />
               </div>
               <div>
-                <div className="text-[11px] text-orange-600 font-bold uppercase tracking-wider">
-                  Votre coursier Yeggo
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] text-emerald-700 font-bold uppercase tracking-wider bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 flex items-center gap-1">
+                    <IconShield className="w-3 h-3 text-emerald-600" />
+                    <span>Coursier Certifié Yeggo</span>
+                  </span>
                 </div>
-                <h3 className="text-base font-bold text-neutral-900">{livraison.livreur_nom}</h3>
+                <h3 className="text-base font-bold text-neutral-900 mt-0.5">{livraison.livreur_nom}</h3>
                 <p className="text-xs text-neutral-500">{livraison.livreur_telephone}</p>
               </div>
             </div>
@@ -267,6 +273,22 @@ export default function SuiviLivraison({
               </div>
             )}
           </div>
+
+          {/* Vehicle & Plate Info for security */}
+          {livraison.livreur_plaque && (
+            <div className="p-3 bg-neutral-50 rounded-2xl border border-neutral-100 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2 text-neutral-600">
+                <span className="font-semibold">Véhicule :</span>
+                <span>{livraison.livreur_modele || "Moto"}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-neutral-400 font-medium">Plaque :</span>
+                <span className="font-bold text-neutral-900 uppercase font-mono px-2 py-0.5 bg-white border border-neutral-200 rounded-md">
+                  {livraison.livreur_plaque}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
