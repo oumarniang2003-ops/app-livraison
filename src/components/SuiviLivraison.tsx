@@ -31,6 +31,7 @@ export type Livraison = {
   destinataire_telephone: string;
   prix_fcfa: number | null;
   mode_paiement: string;
+  code_pin?: string | null;
   livreur_nom: string | null;
   livreur_telephone: string | null;
   livreur_plaque?: string | null;
@@ -76,6 +77,7 @@ export default function SuiviLivraison({
   const [evenements, setEvenements] = useState<Evenement[]>([]);
   const [position, setPosition] = useState<Position>(null);
   const [maintenant, setMaintenant] = useState(() => Date.now());
+  const [copie, setCopie] = useState(false);
 
   useEffect(() => {
     const tick = setInterval(() => setMaintenant(Date.now()), 1000);
@@ -108,6 +110,14 @@ export default function SuiviLivraison({
       body: JSON.stringify({ action: "annuler" }),
     });
     router.refresh();
+  }
+
+  function copierPin() {
+    if (livraison.code_pin) {
+      navigator.clipboard.writeText(livraison.code_pin);
+      setCopie(true);
+      setTimeout(() => setCopie(false), 2500);
+    }
   }
 
   const currentStep = getStepIndex(livraison.statut);
@@ -230,6 +240,44 @@ export default function SuiviLivraison({
           </div>
         </div>
       </div>
+
+      {/* Secret Anti-Theft PIN Code Banner for Client / Receiver */}
+      {role === "client" && livraison.code_pin && livraison.statut !== "annule" && (
+        <div className="bg-gradient-to-tr from-orange-50 via-amber-50 to-orange-50 rounded-3xl border-2 border-orange-300 p-5 sm:p-6 shadow-sm space-y-3 relative overflow-hidden">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="w-8 h-8 rounded-xl bg-orange-500 text-white flex items-center justify-center text-sm font-bold shadow-xs">
+                🔐
+              </span>
+              <div>
+                <span className="text-xs font-black uppercase tracking-wider text-orange-950 block">
+                  Code Secret Anti-Vol (À donner au livreur)
+                </span>
+                <span className="text-[11px] text-orange-800/90">
+                  Le livreur ne peut pas clôturer la course sans ce code
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={copierPin}
+              className="text-xs font-bold px-3 py-1.5 rounded-xl bg-white text-orange-800 hover:bg-orange-100 border border-orange-200 transition shadow-xs"
+            >
+              {copie ? "✓ Code copié !" : "Copier le code"}
+            </button>
+          </div>
+
+          <div className="flex items-center justify-center py-3">
+            <div className="tracking-[0.35em] text-3xl sm:text-4xl font-black text-neutral-950 font-mono bg-white px-8 py-3.5 rounded-2xl border-2 border-orange-300/80 shadow-md">
+              {livraison.code_pin}
+            </div>
+          </div>
+
+          <div className="p-3 bg-white/80 rounded-2xl border border-orange-200/80 text-xs text-orange-950 text-center leading-relaxed">
+            🛡️ <strong>Consigne de sécurité stricte :</strong> Donnez ce code à 4 chiffres au livreur{" "}
+            <u>UNIQUEMENT</u> lorsque vous tenez le colis en main propre et avez vérifié son contenu.
+          </div>
+        </div>
+      )}
 
       {/* Driver Card with Security / Plate verification */}
       {livraison.livreur_nom && (

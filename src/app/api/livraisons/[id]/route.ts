@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { query } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { ensureSchema } from "@/lib/ensureSchema";
 
 type Livraison = {
   id: string;
@@ -18,6 +19,7 @@ type Livraison = {
   destinataire_telephone: string;
   prix_fcfa: number | null;
   mode_paiement: string;
+  code_pin?: string | null;
   livreur_nom?: string | null;
   livreur_telephone?: string | null;
   livreur_plaque?: string | null;
@@ -39,6 +41,7 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  await ensureSchema();
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
 
@@ -51,6 +54,11 @@ export async function GET(
     (session.role === "livreur" && livraison.livreur_id !== session.userId)
   ) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
+  }
+
+  // Sécurité anti-fraude: Ne JAMAIS révéler le code PIN au livreur avant la remise
+  if (session.role === "livreur") {
+    delete livraison.code_pin;
   }
 
   const evenements = await query(
@@ -82,12 +90,14 @@ const patchSchema = z.object({
   lat: z.number().optional(),
   lng: z.number().optional(),
   prix_fcfa: z.number().int().optional(),
+  code_pin: z.string().optional(),
 });
 
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  await ensureSchema();
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
 
@@ -126,6 +136,17 @@ export async function PATCH(
     if (!suivant) {
       return NextResponse.json({ error: "Transition impossible depuis ce statut" }, { status: 409 });
     }
+
+    // Sécurité Anti-Fraude : Vérification obligatoire du Code PIN Secret à la remise
+    if (suivant === "livre") {
+      if (!d.code_pin || d.code_pin.trim() !== String(livraison.code_pin).trim()) {
+        return NextResponse.json(
+          { error: "Code PIN secret incorrect. Demandez le code à 4 chiffres au destinataire pour valider la livraison." },
+          { status: 400 }
+        );
+      }
+    }
+
     await query("update livraisons set statut = $1, updated_at = now() where id = $2", [suivant, id]);
     await query(
       "insert into livraison_evenements (livraison_id, statut, lat, lng) values ($1,$2,$3,$4)",

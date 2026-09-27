@@ -11,6 +11,9 @@ export async function ensureSchema() {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS plaque_moto text;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS modele_moto text;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS statut_validation text DEFAULT 'valide';
+
+      ALTER TABLE livraisons ADD COLUMN IF NOT EXISTS code_pin text;
+      UPDATE livraisons SET code_pin = LPAD(FLOOR(RANDOM() * 9000 + 1000)::text, 4, '0') WHERE code_pin IS NULL;
     `);
     schemaChecked = true;
   } catch (err) {

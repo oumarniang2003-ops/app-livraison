@@ -38,6 +38,7 @@ create table if not exists livraisons (
   prix_fcfa integer,
   mode_paiement text not null default 'cash' check (mode_paiement in ('cash', 'wave', 'orange_money')),
   notes text,
+  code_pin text not null default lpad(floor(random() * 9000 + 1000)::text, 4, '0'),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

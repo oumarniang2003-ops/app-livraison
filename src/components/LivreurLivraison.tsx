@@ -11,6 +11,7 @@ import {
   IconBike,
   IconPackage,
   IconMapPin,
+  IconShield,
 } from "@/components/Icons";
 
 export type Livraison = {
@@ -46,10 +47,10 @@ const ACTION_CONFIG: Record<
     desc: "Appuyez lorsque vous démarrez vers l'adresse de destination",
   },
   en_livraison: {
-    label: "COLIS LIVRÉ & TERMINÉ",
-    icon: "✅",
+    label: "VALIDER LA REMISE DU COLIS",
+    icon: "🔐",
     bgClass: "from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 shadow-emerald-500/25",
-    desc: "Appuyez une fois le colis remis en main propre au destinataire",
+    desc: "Nécessite le code PIN secret à 4 chiffres du destinataire",
   },
 };
 
@@ -58,6 +59,9 @@ export default function LivreurLivraison({ livraison: initiale }: { livraison: L
   const [livraison, setLivraison] = useState(initiale);
   const [loading, setLoading] = useState(false);
   const [suiviActif, setSuiviActif] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pinCode, setPinCode] = useState("");
+  const [pinError, setPinError] = useState("");
   const watchId = useRef<number | null>(null);
 
   useEffect(() => {
@@ -82,19 +86,36 @@ export default function LivreurLivraison({ livraison: initiale }: { livraison: L
     };
   }, [livraison.statut]);
 
-  async function avancer() {
+  async function handleActionClick() {
+    if (livraison.statut === "en_livraison") {
+      setShowPinModal(true);
+      setPinError("");
+      setPinCode("");
+    } else {
+      await avancer();
+    }
+  }
+
+  async function avancer(code?: string) {
     setLoading(true);
+    setPinError("");
     try {
       const res = await fetch(`/api/livraisons/${livraison.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "avancer" }),
+        body: JSON.stringify({
+          action: "avancer",
+          ...(code ? { code_pin: code } : {}),
+        }),
       });
       const data = await res.json();
-      if (res.ok) {
-        setLivraison((l) => ({ ...l, statut: data.statut }));
-        router.refresh();
+      if (!res.ok) {
+        setPinError(data.error ?? "Erreur lors de la validation");
+        return;
       }
+      setLivraison((l) => ({ ...l, statut: data.statut }));
+      setShowPinModal(false);
+      router.refresh();
     } finally {
       setLoading(false);
     }
@@ -104,7 +125,6 @@ export default function LivreurLivraison({ livraison: initiale }: { livraison: L
   const cleanPhone = livraison.destinataire_telephone.replace(/\s+/g, "");
   const waPhone = cleanPhone.startsWith("221") ? cleanPhone : `221${cleanPhone}`;
 
-  // Target coordinates for GPS navigation
   const targetLat =
     livraison.statut === "assignee"
       ? livraison.depart_lat
@@ -124,34 +144,47 @@ export default function LivreurLivraison({ livraison: initiale }: { livraison: L
         <div className="flex items-center gap-3">
           <div
             className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-sm ${
-              suiviActif ? "bg-emerald-100 text-emerald-700" : "bg-neutral-100 text-neutral-400"
+              suiviActif ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-600"
             }`}
           >
             <IconNavigation className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-neutral-900">Partage de position GPS</span>
+              <span className="text-xs font-bold text-neutral-900">Position GPS Sécurisée</span>
               {suiviActif ? (
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
               ) : (
-                <span className="w-2 h-2 rounded-full bg-neutral-300" />
+                <span className="w-2 h-2 rounded-full bg-red-500" />
               )}
             </div>
             <p className="text-[11px] text-neutral-500">
-              {suiviActif ? "Signal en direct transmis au client" : "En attente de localisation GPS..."}
+              {suiviActif ? "Signal GPS direct actif et transmis" : "⚠️ GPS Inactif. Veuillez allumer la localisation"}
             </p>
           </div>
         </div>
 
         <span
           className={`text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full ${
-            suiviActif ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-neutral-100 text-neutral-500"
+            suiviActif ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-red-50 text-red-700 border border-red-200"
           }`}
         >
-          {suiviActif ? "Actif" : "En veille"}
+          {suiviActif ? "GPS Actif" : "GPS Coupé"}
         </span>
       </div>
+
+      {/* Warning if GPS disabled */}
+      {!suiviActif && !["livre", "annule"].includes(livraison.statut) && (
+        <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-800 flex items-start gap-2.5">
+          <span className="text-base">🚨</span>
+          <div>
+            <strong className="block font-bold">Signal GPS obligatoire pour la sécurité :</strong>
+            <span>
+              Vous devez activer la localisation sur votre smartphone pour pouvoir faire progresser ou clôturer cette course.
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Main Delivery Task Card */}
       <div className="bg-white rounded-3xl border border-neutral-200/80 p-5 sm:p-6 shadow-xs space-y-4">
@@ -274,9 +307,9 @@ export default function LivreurLivraison({ livraison: initiale }: { livraison: L
         <div className="sticky bottom-4 z-30 pt-2">
           <div className="bg-white/80 backdrop-blur-md p-2 rounded-3xl shadow-xl border border-neutral-200/80">
             <button
-              onClick={avancer}
-              disabled={loading}
-              className={`w-full py-4 px-6 rounded-2xl bg-gradient-to-r text-white font-extrabold text-sm sm:text-base shadow-lg transition active:scale-98 disabled:opacity-50 flex items-center justify-center gap-3 ${actionInfo.bgClass}`}
+              onClick={handleActionClick}
+              disabled={loading || !suiviActif}
+              className={`w-full py-4 px-6 rounded-2xl bg-gradient-to-r text-white font-extrabold text-sm sm:text-base shadow-lg transition active:scale-98 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3 ${actionInfo.bgClass}`}
             >
               {loading ? (
                 <span className="inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -288,6 +321,69 @@ export default function LivreurLivraison({ livraison: initiale }: { livraison: L
               )}
             </button>
             <p className="text-[10px] text-neutral-500 text-center mt-1.5">{actionInfo.desc}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Secret PIN Entry Security Modal */}
+      {showPinModal && (
+        <div className="fixed inset-0 z-50 bg-neutral-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl border border-neutral-200 space-y-4 animate-in fade-in zoom-in duration-200">
+            <div className="text-center space-y-1">
+              <div className="w-12 h-12 rounded-2xl bg-orange-100 text-orange-600 mx-auto flex items-center justify-center text-xl shadow-xs">
+                🔐
+              </div>
+              <h3 className="text-base font-black text-neutral-900">Code PIN de Remise Obligatoire</h3>
+              <p className="text-xs text-neutral-500">
+                Demandez au destinataire le <strong>code secret à 4 chiffres</strong> affiché sur son écran.
+              </p>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                avancer(pinCode);
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <input
+                  type="text"
+                  maxLength={4}
+                  required
+                  autoFocus
+                  pattern="[0-9]{4}"
+                  inputMode="numeric"
+                  placeholder="Ex: 8492"
+                  value={pinCode}
+                  onChange={(e) => setPinCode(e.target.value)}
+                  className="w-full text-center tracking-[0.4em] font-mono text-3xl font-black py-3 bg-neutral-50 border-2 border-neutral-200 focus:border-orange-500 rounded-2xl focus:outline-none focus:ring-4 focus:ring-orange-500/10"
+                />
+              </div>
+
+              {pinError && (
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-600 font-bold text-center">
+                  {pinError}
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowPinModal(false)}
+                  className="flex-1 py-3 px-4 rounded-xl border border-neutral-200 text-neutral-700 font-bold text-xs hover:bg-neutral-50 transition"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading || pinCode.length !== 4}
+                  className="flex-1 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition disabled:opacity-50"
+                >
+                  {loading ? "Vérification..." : "Valider la remise"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

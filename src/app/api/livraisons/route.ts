@@ -3,6 +3,7 @@ import { z } from "zod";
 import { query } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { geocode } from "@/lib/geocode";
+import { ensureSchema } from "@/lib/ensureSchema";
 
 const createSchema = z.object({
   adresse_depart: z.string().min(3),
@@ -19,6 +20,7 @@ const createSchema = z.object({
 });
 
 export async function POST(req: Request) {
+  await ensureSchema();
   const session = await getSession();
   if (!session || session.role !== "client") {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
@@ -36,11 +38,13 @@ export async function POST(req: Request) {
     d.arrivee_lat && d.arrivee_lng ? null : geocode(d.adresse_arrivee),
   ]);
 
+  const codePin = Math.floor(1000 + Math.random() * 9000).toString();
+
   const result = await query<{ id: string }>(
     `insert into livraisons
       (client_id, adresse_depart, depart_lat, depart_lng, adresse_arrivee, arrivee_lat, arrivee_lng,
-       description, destinataire_nom, destinataire_telephone, mode_paiement, notes)
-     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+       description, destinataire_nom, destinataire_telephone, mode_paiement, notes, code_pin)
+     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
      returning id`,
     [
       session.userId,
@@ -55,6 +59,7 @@ export async function POST(req: Request) {
       d.destinataire_telephone,
       d.mode_paiement,
       d.notes ?? null,
+      codePin,
     ]
   );
   const id = result.rows[0].id;
@@ -64,10 +69,11 @@ export async function POST(req: Request) {
     [id]
   );
 
-  return NextResponse.json({ ok: true, id });
+  return NextResponse.json({ ok: true, id, code_pin: codePin });
 }
 
 export async function GET() {
+  await ensureSchema();
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
